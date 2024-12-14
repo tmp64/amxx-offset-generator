@@ -1,0 +1,162 @@
+{
+  "classes": {
+    "CBaseEntity": {
+      "baseClass": null,
+      "fields": [
+        {
+          "name": "pev",
+          "offset": 4,
+          "arraySize": null,
+          "type": "entvars_t*",
+          "amxxType": "entvars",
+          "unsigned": null
+        },
+        {
+          "name": "m_pGoalEnt",
+          "offset": 8,
+          "arraySize": null,
+          "type": "CBaseEntity*",
+          "amxxType": "classptr",
+          "unsigned": null
+        },
+        {
+          "name": "m_pfnThink",
+          "offset": 16,
+          "arraySize": null,
+          "type": "(*__pfn)(CBaseEntity*)",
+          "amxxType": "function",
+          "unsigned": null
+        },
+        {
+          "name": "ammo_9mm",
+          "offset": 32,
+          "arraySize": null,
+          "type": "int",
+          "amxxType": "integer",
+          "unsigned": false
+        },
+        {
+          "name": "m_flStartThrow",
+          "offset": 64,
+          "arraySize": null,
+          "type": "float",
+          "amxxType": "float",
+          "unsigned": null
+        }
+      ]
+    },
+    "CBasePlayer": {
+      "baseClass": "CBaseAnimating",
+      "fields": [
+        {
+          "name": "m_pentSndLast",
+          "offset": 732,
+          "arraySize": null,
+          "type": "edict_t*",
+          "amxxType": "edict",
+          "unsigned": null
+        },
+        {
+          "name": "m_rgItems",
+          "offset": 748,
+          "arraySize": 5,
+          "type": "int[5]",
+          "amxxType": "integer",
+          "unsigned": false
+        },
+        {
+          "name": "m_afPhysicsFlags",
+          "offset": 748,
+          "arraySize": null,
+          "type": "int",
+          "amxxType": "integer",
+          "unsigned": true
+        },
+        {
+          "name": "m_szTextureName",
+          "offset": 1108,
+          "arraySize": 13,
+          "type": "char[13]",
+          "amxxType": "string",
+          "unsigned": false
+        },
+        {
+          "name": "m_pTank",
+          "offset": 1152,
+          "arraySize": null,
+          "type": "EHANDLE",
+          "amxxType": "ehandle",
+          "unsigned": null
+        },
+        {
+          "name": "m_vecAutoAim",
+          "offset": 1496,
+          "arraySize": null,
+          "type": "Vector",
+          "amxxType": "vector",
+          "unsigned": null
+        }
+      ]
+    },
+    "CFlyingMonster": {
+      "baseClass": "CBaseAnimating",
+      "fields": [
+        {
+          "name": "m_pFlapSound",
+          "offset": 688,
+          "arraySize": null,
+          "type": "const char*",
+          "amxxType": "stringptr",
+          "unsigned": null
+        }
+      ]
+    },
+    "CAmbientGeneric": {
+      "baseClass": "CBaseEntity",
+      "fields": [
+        {
+          "name": "m_dpv",
+          "offset": 88,
+          "arraySize": null,
+          "type": "dynpitchvol_t",
+          "amxxType": "structure",
+          "unsigned": null
+        }
+      ]
+    },
+    "CBaseButton": {
+      "baseClass": "CBaseToggle",
+      "fields": [
+        {
+          "name": "m_bLockedSound",
+          "offset": 288,
+          "arraySize": null,
+          "type": "BYTE",
+          "amxxType": "character",
+          "unsigned": true
+        }
+      ]
+    },
+    "CBaseMonster": {
+      "baseClass": "CBaseToggle",
+      "fields": [
+        {
+          "name": "m_pSchedule",
+          "offset": 376,
+          "arraySize": null,
+          "type": "class Schedule_t*",
+          "amxxType": "pointer",
+          "unsigned": null
+        },
+        {
+          "name": "m_iszTriggerTarget",
+          "offset": 636,
+          "arraySize": null,
+          "type": "string_t",
+          "amxxType": "stringint",
+          "unsigned": null
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "dependencies": [
+    "boost-json",
+    "boost-program-options",
+    "fmt",
+    "raw-pdb"
+  ]
+}

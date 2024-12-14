@@ -1,0 +1,7 @@
+CBaseEntity
+CBasePlayer
+CFlyingMonster
+CBaseMonster
+CAmbientGeneric
+CBaseButton
+CBaseMonster

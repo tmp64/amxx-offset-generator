@@ -1,0 +1,61 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 68e6bca..c97dd80 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.16)
+ project(raw_pdb)
+ 
+ set(CMAKE_CXX_STANDARD 11)
++set(CMAKE_DEBUG_POSTFIX _dbg)
+ 
+ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+ 
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index df2a6cd..38ef34c 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -70,7 +70,8 @@ add_library(raw_pdb
+ 
+ target_include_directories(raw_pdb
+   PUBLIC
+-    .
++	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
++	$<INSTALL_INTERFACE:include>
+ )
+ 
+ target_precompile_headers(raw_pdb
+@@ -84,12 +85,15 @@ if (RAWPDB_BUILD_EXAMPLES)
+ 	add_subdirectory(Examples)
+ endif()
+ 
+-if (UNIX)
++# if (UNIX)
+ 	include(GNUInstallDirs)
+ 
+ 	install(
+ 		TARGETS raw_pdb
++		EXPORT raw-pdb-config
++		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+ 		LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
++		ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+ 	)
+ 
+ 	file(GLOB_RECURSE HEADER_FILES
+@@ -109,4 +113,16 @@ if (UNIX)
+ 		FILES ${HEADER_FILES_FOUNDATION}
+ 		DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/raw_pdb/Foundation"
+ 	)
+-endif (UNIX)
++
++	export(TARGETS
++		raw_pdb
++		NAMESPACE raw_pdb::
++		FILE "${CMAKE_CURRENT_BINARY_DIR}/raw_pdb-config.cmake"
++	)
++
++	install(
++		EXPORT raw-pdb-config
++		NAMESPACE raw_pdb::
++		DESTINATION "share/raw-pdb"
++	)
++# endif (UNIX)
