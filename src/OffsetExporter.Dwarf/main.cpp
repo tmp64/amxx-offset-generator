@@ -12,6 +12,237 @@ namespace
 std::set<std::string> g_ClassList;
 std::set<std::string> g_ProcessedClasses;
 
+static std::string ConvertTypeToCString(
+    Dwarf_Debug dbg,
+    Dwarf_Die typeDie,
+    std::string_view name)
+{
+    switch (GetDieTag(typeDie))
+    {
+    case DW_TAG_base_type:
+    case DW_TAG_unspecified_type:
+    case DW_TAG_typedef:
+    case DW_TAG_structure_type:
+    case DW_TAG_union_type:
+    case DW_TAG_class_type:
+    case DW_TAG_enumeration_type:
+    case DW_TAG_template_alias:
+        return fmt::format("{} {}", GetStringAttr(typeDie, DW_AT_name), name);
+    case DW_TAG_const_type:
+    {
+        Dwarf_Die utype = FollowReference(dbg, typeDie, DW_AT_type);
+        return ConvertTypeToCString(dbg, utype, fmt::format("const {}", name));
+    }
+    case DW_TAG_pointer_type:
+    {
+        Dwarf_Die utype = FollowReference(dbg, typeDie, DW_AT_type);
+        return ConvertTypeToCString(dbg, utype, fmt::format("*{}", name));
+    }
+    case DW_TAG_reference_type:
+    {
+        Dwarf_Die utype = FollowReference(dbg, typeDie, DW_AT_type);
+        return ConvertTypeToCString(dbg, utype, fmt::format("&{}", name));
+    }
+    case DW_TAG_restrict_type:
+    {
+        Dwarf_Die utype = FollowReference(dbg, typeDie, DW_AT_type);
+        return ConvertTypeToCString(dbg, utype, fmt::format("restrict {}", name));
+    }
+    case DW_TAG_rvalue_reference_type:
+    {
+        Dwarf_Die utype = FollowReference(dbg, typeDie, DW_AT_type);
+        return ConvertTypeToCString(dbg, utype, fmt::format("&&{}", name));
+    }
+    case DW_TAG_volatile_type:
+    {
+        Dwarf_Die utype = FollowReference(dbg, typeDie, DW_AT_type);
+        return ConvertTypeToCString(dbg, utype, fmt::format("volatile {}", name));
+    }
+    case DW_TAG_array_type:
+    {
+        Dwarf_Die utype = FollowReference(dbg, typeDie, DW_AT_type);
+        int64_t size = -1;
+
+        ForEachChild(dbg, typeDie, [&](Dwarf_Die childDie)
+        {
+            //fmt::println("WTF {}", GetDieTagString(childDie));
+            //PrintDieAttrs(dbg, childDie);
+
+            if (GetDieTag(childDie) == DW_TAG_subrange_type)
+            {
+                size = GetUIntAttr(dbg, childDie, DW_AT_upper_bound);
+                return;
+            }
+        });
+
+        return ConvertTypeToCString(dbg, utype, fmt::format("{}[{}]", name, size));
+    }
+    case DW_TAG_subroutine_type:
+        return fmt::format("__subroutine {}", name);
+    case DW_TAG_ptr_to_member_type:
+        return fmt::format("__member_func *{}", name);
+    default:
+        return fmt::format("unk_{} {}", GetDieTagString(typeDie), name);
+    }
+}
+
+static Dwarf_Die ClearModifiers(
+    Dwarf_Debug dbg,
+    Dwarf_Die typeDie,
+    bool modifiers,
+    bool typedefs)
+{
+    if (modifiers)
+    {
+        switch (GetDieTag(typeDie))
+        {
+        case DW_TAG_const_type:
+        case DW_TAG_restrict_type:
+        case DW_TAG_volatile_type:
+        {
+            Dwarf_Die utype = FollowReference(dbg, typeDie, DW_AT_type);
+            return ClearModifiers(dbg, utype, modifiers, typedefs);
+        }
+        }
+    }
+
+    if (typedefs)
+    {
+        switch (GetDieTag(typeDie))
+        {
+        case DW_TAG_typedef:
+        case DW_TAG_template_alias:
+        {
+            Dwarf_Die utype = FollowReference(dbg, typeDie, DW_AT_type);
+            return ClearModifiers(dbg, utype, modifiers, typedefs);
+        }
+        }
+    }
+
+    return typeDie;
+}
+
+static std::optional<int64_t> FindArraySize(
+    Dwarf_Debug dbg,
+    Dwarf_Die typeDie)
+{
+    typeDie = ClearModifiers(dbg, typeDie, true, true);
+
+    if (GetDieTag(typeDie) != DW_TAG_array_type)
+        return std::nullopt;
+
+    int64_t size = -1;
+
+    ForEachChild(dbg, typeDie, [&](Dwarf_Die childDie)
+    {
+        if (GetDieTag(childDie) == DW_TAG_subrange_type)
+        {
+            size = GetUIntAttr(dbg, childDie, DW_AT_upper_bound);
+            return;
+        }
+    });
+
+    return size;
+}
+
+static std::string_view ConvertTypeToAmxx(
+    Dwarf_Debug dbg,
+    Dwarf_Die typeDie,
+    std::string_view name,
+    std::optional<bool>& outUnsigned)
+{
+    typeDie = ClearModifiers(dbg, typeDie, true, false);
+
+    switch (GetDieTag(typeDie))
+    {
+    case DW_TAG_base_type:
+    {
+        int64_t encoding = GetUIntAttr(dbg, typeDie, DW_AT_encoding);
+        int64_t bitSize = GetSizeAttrBits(dbg, typeDie);
+
+        switch (encoding)
+        {
+        case DW_ATE_signed:
+        case DW_ATE_signed_char:
+            outUnsigned = false;
+            break;
+        case DW_ATE_unsigned:
+        case DW_ATE_unsigned_char:
+            outUnsigned = true;
+            break;
+        }
+
+        switch (encoding)
+        {
+        case DW_ATE_boolean: return "character";
+        case DW_ATE_address: return "pointer";
+        case DW_ATE_signed:
+        case DW_ATE_unsigned:
+        {
+            switch (bitSize)
+            {
+            case 8: return "character";
+            case 16: return "short";
+            case 32: return "integer";
+            case 64: return "long long";
+            default: return "int size invalid";
+            }
+        }
+        case DW_ATE_signed_char:
+        case DW_ATE_unsigned_char:
+        case DW_ATE_ASCII:
+        case DW_ATE_UCS:
+        case DW_ATE_UTF:
+            return "character";
+        case DW_ATE_float: return "float";
+        {
+            switch (bitSize)
+            {
+            case 32: return "float";
+            case 64: return "double";
+            default: return "float size invalid";
+            }
+        }
+        default:
+            return "unknown base type";
+        }
+    }
+    case DW_TAG_pointer_type:
+    case DW_TAG_reference_type:
+    {
+        Dwarf_Die utype = ClearModifiers(dbg, FollowReference(dbg, typeDie, DW_AT_type), true, false);
+
+        switch (GetDieTag(utype))
+        {
+        case DW_TAG_base_type:
+        {
+            if (GetStringAttr(utype, DW_AT_name) == "char")
+                return "stringptr";
+
+            break;
+        }
+        case DW_TAG_class_type:
+        {
+            std::string classname = GetStringAttr(utype, DW_AT_name);
+
+            if (classname == "entvars_s")
+                return "entvars";
+            if (classname == "edict_s")
+                return "edict";
+            if (classname[0] == 'C')
+                return "classptr";
+
+            break;
+        }
+        }
+
+        return "pointer";
+    }
+    default:
+        return "unknown";
+    }
+}
+
 void ProcessDie(Dwarf_Debug dbg, Dwarf_Die die, boost::json::object& jClasses)
 {
     int res;
@@ -42,22 +273,20 @@ void ProcessDie(Dwarf_Debug dbg, Dwarf_Die die, boost::json::object& jClasses)
 
     fmt::println("class {}\n{{", className);
 
+    boost::json::array jFields;
+
     ForEachChild(dbg, die, [&](Dwarf_Die childDie)
     {
         switch (GetDieTag(childDie))
         {
         case DW_TAG_inheritance:
         {
-            Dwarf_Attribute attr;
-            res = dwarf_attr(childDie, DW_AT_type, &attr, &error);
-
-            Dwarf_Die baseClassDie = FollowReference(dbg, attr);
+            Dwarf_Die baseClassDie = FollowReference(dbg, childDie, DW_AT_type);
             std::string baseClassName = GetStringAttr(baseClassDie, DW_AT_name);
             fmt::println("  base: {}", baseClassName);
             jClass["baseClass"] = baseClassName;
 
             dwarf_dealloc(dbg, baseClassDie, DW_DLA_DIE);
-            dwarf_dealloc(dbg, attr, DW_DLA_ATTR);
             break;
         }
         case DW_TAG_member:
@@ -71,8 +300,31 @@ void ProcessDie(Dwarf_Debug dbg, Dwarf_Die die, boost::json::object& jClasses)
                 break;
             }
 
-            fmt::println("  [0x{:04X}] {}", offset, fieldName);
-            //PrintDieAttrs(dbg, childDie);
+            Dwarf_Attribute typeAttr;
+            res = dwarf_attr(childDie, DW_AT_type, &typeAttr, &error);
+            CheckError(res, error);
+            Dwarf_Die fieldType = FollowReference(dbg, typeAttr);
+
+            std::optional<uint64_t> arraySize = FindArraySize(dbg, fieldType);
+            std::string typeName = ConvertTypeToCString(dbg, fieldType, fieldName);
+            std::optional<bool> isUnsigned;
+            std::string_view amxxType = ConvertTypeToAmxx(dbg, fieldType, fieldName, isUnsigned);
+
+            boost::json::object jField;
+            jField["name"] = fieldName;
+            jField["offset"] = offset;
+            jField["arraySize"] = arraySize.has_value() ? boost::json::value(*arraySize) : nullptr;
+            jField["type"] = typeName;
+            jField["amxxType"] = amxxType;
+            jField["unsigned"] = isUnsigned.has_value() ? boost::json::value(*isUnsigned) : nullptr;
+
+            // fmt::println("    {}", GetDieTagString(fieldType));
+
+            // PrintDieAttrs(dbg, childDie);
+
+            fmt::println("  [0x{:04X}] {}", offset, typeName);
+
+            jFields.push_back(std::move(jField));
             break;
         }
         }
@@ -80,6 +332,7 @@ void ProcessDie(Dwarf_Debug dbg, Dwarf_Die die, boost::json::object& jClasses)
 
     fmt::println("}}");
 
+    jClass["fields"] = std::move(jFields);
     jClasses[className] = std::move(jClass);
 }
 

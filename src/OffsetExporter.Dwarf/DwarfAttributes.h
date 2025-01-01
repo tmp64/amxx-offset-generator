@@ -8,6 +8,10 @@ void PrintDieAttrs(Dwarf_Debug dbg, Dwarf_Die die)
     Dwarf_Attribute* attrs;
     Dwarf_Signed attrNum;
     res = dwarf_attrlist(die, &attrs, &attrNum, &error);
+
+    if (res == DW_DLV_NO_ENTRY)
+        return;
+
     CheckError(res, error);
 
     for (Dwarf_Signed i = 0; i < attrNum; i++)
@@ -42,6 +46,15 @@ Dwarf_Half GetDieTag(Dwarf_Die die)
     CheckError(res, error);
 
     return dieTag;
+}
+
+const char* GetDieTagString(Dwarf_Die die)
+{
+    Dwarf_Half tag = GetDieTag(die);
+
+    const char* name;
+    dwarf_get_TAG_name(tag, &name);
+    return name;
 }
 
 bool HasAttr(Dwarf_Debug dbg, Dwarf_Die die, Dwarf_Half attrNum)
@@ -92,6 +105,16 @@ int64_t GetUIntAttr(Dwarf_Debug dbg, Dwarf_Die die, Dwarf_Half attrNum, int64_t 
     return value;
 }
 
+int64_t GetSizeAttrBits(Dwarf_Debug dbg, Dwarf_Die die, int64_t def = -1)
+{
+    if (HasAttr(dbg, die, DW_AT_byte_size))
+        return GetUIntAttr(dbg, die, DW_AT_byte_size, -1) * 8;
+    else if (HasAttr(dbg, die, DW_AT_bit_size))
+        return GetUIntAttr(dbg, die, DW_AT_bit_size, -1);
+    else
+        return def;
+}
+
 Dwarf_Die FollowReference(Dwarf_Debug dbg, Dwarf_Attribute attr)
 {
     int res;
@@ -105,4 +128,20 @@ Dwarf_Die FollowReference(Dwarf_Debug dbg, Dwarf_Attribute attr)
     CheckError(res, error);
 
     return die;
+}
+
+Dwarf_Die FollowReference(Dwarf_Debug dbg, Dwarf_Die die, Dwarf_Half attrNum)
+{
+    int res;
+    Dwarf_Error error;
+
+    Dwarf_Attribute attr;
+    res = dwarf_attr(die, attrNum, &attr, &error);
+    CheckError(res, error);
+
+    Dwarf_Die ref = FollowReference(dbg, attr);
+
+    dwarf_dealloc(dbg, attr, DW_DLA_ATTR);
+
+    return ref;
 }
