@@ -10,7 +10,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Third-party libraries
 find_package(Boost CONFIG REQUIRED COMPONENTS json program_options)
 find_package(fmt CONFIG REQUIRED)
+find_package(libdwarf CONFIG REQUIRED)
 find_package(raw-pdb CONFIG REQUIRED)
 
 # Projects
+add_subdirectory(src/OffsetExporter.Dwarf)
 add_subdirectory(src/OffsetExporter.Pdb)

@@ -3,6 +3,7 @@
     "boost-json",
     "boost-program-options",
     "fmt",
+    "libdwarf",
     "raw-pdb"
   ]
 }
