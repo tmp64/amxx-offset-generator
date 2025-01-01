@@ -2,6 +2,9 @@ set(TARGET_NAME OffsetExporter.Dwarf)
 
 add_executable(${TARGET_NAME}
     main.cpp
+    DwarfAttributes.h
+    DwarfCommon.h
+    DwarfTraverse.h
     pch.h
 )
 
