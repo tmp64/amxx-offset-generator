@@ -333,6 +333,7 @@ void ProcessDie(Dwarf_Debug dbg, Dwarf_Die die, boost::json::object& jClasses)
     fmt::println("class {}\n{{", className);
 
     boost::json::array jFields;
+    boost::json::array jVTable;
 
     ForEachChild(dbg, die, [&](Dwarf_Die childDie)
     {
@@ -359,10 +360,9 @@ void ProcessDie(Dwarf_Debug dbg, Dwarf_Die die, boost::json::object& jClasses)
                 break;
             }
 
-            if (fieldName.starts_with("_vptr."))
+            if (HasAttr(dbg, childDie, DW_AT_artificial))
             {
-                // Special handling for vtable
-                // TODO 2025-01-25
+                // Skip compiler-generated
                 break;
             }
 
@@ -393,12 +393,57 @@ void ProcessDie(Dwarf_Debug dbg, Dwarf_Die die, boost::json::object& jClasses)
             jFields.push_back(std::move(jField));
             break;
         }
+        case DW_TAG_subprogram:
+        {
+            if (!HasAttr(dbg, childDie, DW_AT_virtuality))
+                break;
+
+            Dwarf_Attribute vtableElemLocation;
+            res = dwarf_attr(childDie, DW_AT_vtable_elem_location, &vtableElemLocation, &error);
+            CheckError(res, error);
+
+            int vtableIdx = -1;
+
+            ForEachLocEntry(vtableElemLocation, [&](const LocListEntry& entry)
+            {
+                // Only support single DW_OP_constu
+                if (vtableIdx != -1)
+                    throw std::runtime_error("Vtable idx already set");
+
+                if (entry.loclist_expr_op_count > 1)
+                    throw std::runtime_error("More than one operation");
+
+                for (int i = 0; i < entry.loclist_expr_op_count; i++)
+                {
+                    LocOperation op = entry.GetOperation(i);
+
+                    if (op.op != DW_OP_constu)
+                        throw std::runtime_error("Unknown op");
+
+                    vtableIdx = op.opd1;
+                }
+            });
+
+            if (vtableIdx == -1)
+                throw std::runtime_error("Vtable idx not found");
+
+            std::string methodName = GetStringAttr(childDie, DW_AT_name);
+            std::string linkageName = GetStringAttr(childDie, DW_AT_linkage_name);
+            // fmt::println("[{}] {} ({})", vtableIdx, methodName, linkageName);
+
+            boost::json::object jMethod;
+            jMethod["name"] = methodName;
+            jMethod["linkName"] = linkageName;
+            jMethod["index"] = vtableIdx;
+            jVTable.push_back(std::move(jMethod));
+        }
         }
     });
 
     fmt::println("}}");
 
     jClass["fields"] = std::move(jFields);
+    jClass["vtable"] = std::move(jVTable);
     jClasses[className] = std::move(jClass);
 }
 

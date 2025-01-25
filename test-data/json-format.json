@@ -43,6 +43,18 @@
           "amxxType": "float",
           "unsigned": null
         }
+      ],
+      "vtable": [
+        {
+          "name": "Spawn",
+          "linkName": "_ZN11CBaseEntity5SpawnEv",
+          "index": 0
+        },
+        {
+          "name": "Precache",
+          "linkName": "_ZN11CBaseEntity8PrecacheEv",
+          "index": 1
+        }
       ]
     },
     "CBasePlayer": {

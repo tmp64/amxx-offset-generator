@@ -1,7 +1,7 @@
 #pragma once
 #include "DwarfCommon.h"
 
-void PrintDieAttrs(Dwarf_Debug dbg, Dwarf_Die die)
+inline void PrintDieAttrs(Dwarf_Debug dbg, Dwarf_Die die)
 {
     int res;
     Dwarf_Error error;
@@ -36,7 +36,7 @@ void PrintDieAttrs(Dwarf_Debug dbg, Dwarf_Die die)
     dwarf_dealloc(dbg, attrs, DW_DLA_ATTR);
 }
 
-Dwarf_Half GetDieTag(Dwarf_Die die)
+inline Dwarf_Half GetDieTag(Dwarf_Die die)
 {
     int res;
     Dwarf_Error error;
@@ -48,7 +48,7 @@ Dwarf_Half GetDieTag(Dwarf_Die die)
     return dieTag;
 }
 
-const char* GetDieTagString(Dwarf_Die die)
+inline const char* GetDieTagString(Dwarf_Die die)
 {
     Dwarf_Half tag = GetDieTag(die);
 
@@ -57,7 +57,7 @@ const char* GetDieTagString(Dwarf_Die die)
     return name;
 }
 
-bool HasAttr(Dwarf_Debug dbg, Dwarf_Die die, Dwarf_Half attrNum)
+inline bool HasAttr(Dwarf_Debug dbg, Dwarf_Die die, Dwarf_Half attrNum)
 {
     int res;
     Dwarf_Error error;
@@ -73,7 +73,7 @@ bool HasAttr(Dwarf_Debug dbg, Dwarf_Die die, Dwarf_Half attrNum)
     return true;
 }
 
-std::string GetStringAttr(Dwarf_Die die, Dwarf_Half attrNum, bool allowOptional = false)
+inline std::string GetStringAttr(Dwarf_Die die, Dwarf_Half attrNum, bool allowOptional = false)
 {
     int res;
     Dwarf_Error error;
@@ -88,7 +88,7 @@ std::string GetStringAttr(Dwarf_Die die, Dwarf_Half attrNum, bool allowOptional 
     return buf;
 }
 
-int64_t GetUIntAttr(Dwarf_Debug dbg, Dwarf_Die die, Dwarf_Half attrNum, int64_t def = -1)
+inline int64_t GetUIntAttr(Dwarf_Debug dbg, Dwarf_Die die, Dwarf_Half attrNum, int64_t def = -1)
 {
     int res;
     Dwarf_Error error;
@@ -109,7 +109,7 @@ int64_t GetUIntAttr(Dwarf_Debug dbg, Dwarf_Die die, Dwarf_Half attrNum, int64_t 
     return value;
 }
 
-int64_t GetSizeAttrBits(Dwarf_Debug dbg, Dwarf_Die die, int64_t def = -1)
+inline int64_t GetSizeAttrBits(Dwarf_Debug dbg, Dwarf_Die die, int64_t def = -1)
 {
     if (HasAttr(dbg, die, DW_AT_byte_size))
         return GetUIntAttr(dbg, die, DW_AT_byte_size, -1) * 8;
@@ -119,7 +119,7 @@ int64_t GetSizeAttrBits(Dwarf_Debug dbg, Dwarf_Die die, int64_t def = -1)
         return def;
 }
 
-Dwarf_Die FollowReference(Dwarf_Debug dbg, Dwarf_Attribute attr)
+inline Dwarf_Die FollowReference(Dwarf_Debug dbg, Dwarf_Attribute attr)
 {
     int res;
     Dwarf_Error error;
@@ -134,7 +134,7 @@ Dwarf_Die FollowReference(Dwarf_Debug dbg, Dwarf_Attribute attr)
     return die;
 }
 
-Dwarf_Die FollowReference(Dwarf_Debug dbg, Dwarf_Die die, Dwarf_Half attrNum)
+inline Dwarf_Die FollowReference(Dwarf_Debug dbg, Dwarf_Die die, Dwarf_Half attrNum)
 {
     int res;
     Dwarf_Error error;
