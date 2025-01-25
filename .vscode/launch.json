@@ -1,0 +1,21 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "create_amxx_files",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "scripts/create_amxx_files.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--windows=.build/src/OffsetExporter.Pdb/bhl.json",
+                "--linux=.build/src/OffsetExporter.Dwarf/bhl_linux.json",
+                "--out=scripts/gamedata/common.games/custom.test",
+                "--banner=Test Generated File",
+            ]
+        }
+    ]
+}
