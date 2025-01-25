@@ -269,7 +269,7 @@ static std::string_view ConvertTypeToAmxx(
     case DW_TAG_structure_type:
     case DW_TAG_class_type:
     {
-        std::string classname = GetStringAttr(typeDie, DW_AT_name);
+        std::string classname = GetStringAttr(typeDie, DW_AT_name, true);
 
         if (classname == "Vector")
             return "vector";
