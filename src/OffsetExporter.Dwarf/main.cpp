@@ -138,6 +138,12 @@ static std::optional<int64_t> FindArraySize(
         if (GetDieTag(childDie) == DW_TAG_subrange_type)
         {
             size = GetUIntAttr(dbg, childDie, DW_AT_upper_bound);
+
+            if (size == -1)
+                throw std::runtime_error("DW_AT_upper_bound not set");
+
+            // +1 to convert upper bound to size
+            size += 1;
             return;
         }
     });
