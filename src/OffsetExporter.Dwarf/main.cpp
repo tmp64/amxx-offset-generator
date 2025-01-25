@@ -152,8 +152,9 @@ static std::string_view ConvertTypeToAmxx(
     std::optional<bool>& outUnsigned)
 {
     typeDie = ClearModifiers(dbg, typeDie, true, false);
+    Dwarf_Half typeDieTag = GetDieTag(typeDie);
 
-    switch (GetDieTag(typeDie))
+    switch (typeDieTag)
     {
     case DW_TAG_base_type:
     {
@@ -185,7 +186,7 @@ static std::string_view ConvertTypeToAmxx(
             case 16: return "short";
             case 32: return "integer";
             case 64: return "long long";
-            default: return "int size invalid";
+            default: throw std::logic_error("int size invalid");
             }
         }
         case DW_ATE_signed_char:
@@ -200,11 +201,11 @@ static std::string_view ConvertTypeToAmxx(
             {
             case 32: return "float";
             case 64: return "double";
-            default: return "float size invalid";
+            default: throw std::logic_error("float size invalid");
             }
         }
         default:
-            return "unknown base type";
+            throw std::logic_error("unknown base type");
         }
     }
     case DW_TAG_pointer_type:
@@ -234,12 +235,70 @@ static std::string_view ConvertTypeToAmxx(
 
             break;
         }
+        case DW_TAG_subroutine_type:
+            return "function";
+        case DW_TAG_typedef:
+        {
+            std::string typedefName = GetStringAttr(utype, DW_AT_name);
+
+            if (typedefName == "entvars_t")
+                return "entvars";
+            if (typedefName == "edict_t")
+                return "edict";
+        }
         }
 
         return "pointer";
     }
+    case DW_TAG_typedef:
+    {
+        std::string typeName = GetStringAttr(typeDie, DW_AT_name);
+
+        if (typeName == "string_t")
+            return "stringint";
+
+        Dwarf_Die utype = FollowReference(dbg, typeDie, DW_AT_type);
+        return ConvertTypeToAmxx(dbg, utype, name, outUnsigned);
+    }
+    case DW_TAG_structure_type:
+    case DW_TAG_class_type:
+    {
+        std::string classname = GetStringAttr(typeDie, DW_AT_name);
+
+        if (classname == "Vector")
+            return "vector";
+        if (classname == "EHANDLE")
+            return "ehandle";
+
+        return "structure";
+    }
+    case DW_TAG_ptr_to_member_type:
+        return "function";
+    case DW_TAG_array_type:
+    {
+        Dwarf_Die utype = FollowReference(dbg, typeDie, DW_AT_type);
+        std::string utypeName = GetStringAttr(utype, DW_AT_name, true);
+
+        if (utypeName == "char")
+            return "string";
+
+        return ConvertTypeToAmxx(dbg, utype, name, outUnsigned);
+    }
+    case DW_TAG_enumeration_type:
+    {
+        int64_t bitSize = GetSizeAttrBits(dbg, typeDie);
+
+        switch (bitSize)
+        {
+        case 8: return "character";
+        case 16: return "short";
+        case 32: return "integer";
+        case 64: return "long long";
+        default: throw std::logic_error("enum size invalid");
+        }
+    }
     default:
-        return "unknown";
+        throw std::logic_error("unknown type");
     }
 }
 
@@ -297,6 +356,13 @@ void ProcessDie(Dwarf_Debug dbg, Dwarf_Die die, boost::json::object& jClasses)
             if (offset == -1)
             {
                 // Skip statics
+                break;
+            }
+
+            if (fieldName.starts_with("_vptr."))
+            {
+                // Special handling for vtable
+                // TODO 2025-01-25
                 break;
             }
 

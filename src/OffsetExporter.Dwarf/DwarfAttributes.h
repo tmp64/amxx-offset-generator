@@ -73,13 +73,17 @@ bool HasAttr(Dwarf_Debug dbg, Dwarf_Die die, Dwarf_Half attrNum)
     return true;
 }
 
-std::string GetStringAttr(Dwarf_Die die, Dwarf_Half attrNum)
+std::string GetStringAttr(Dwarf_Die die, Dwarf_Half attrNum, bool allowOptional = false)
 {
     int res;
     Dwarf_Error error;
     char* buf = nullptr;
 
     res = dwarf_die_text(die, attrNum, &buf, &error);
+
+    if (allowOptional && res == DW_DLV_NO_ENTRY)
+        return std::string();
+
     CheckError(res, error);
     return buf;
 }

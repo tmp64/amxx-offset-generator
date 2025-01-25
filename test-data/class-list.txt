@@ -5,3 +5,4 @@ CBaseMonster
 CAmbientGeneric
 CBaseButton
 CBaseMonster
+CBasePlayerItem
