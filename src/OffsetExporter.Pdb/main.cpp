@@ -1410,11 +1410,13 @@ void DisplayFields(const TypeTable& typeTable, const PDB::CodeView::TPI::Record*
 			std::string typeName = ConvertTypeToCString(leafName, typeTable, fieldRecord->data.LF_MEMBER.index, &arraySize);
 			std::string_view amxxType = ConvertTypeToAmxx(typeTable, fieldRecord->data.LF_MEMBER.index);
 
+			bool isStringT = false;
+
 			if (amxxType == "integer")
 			{
 				// Check if this is a string_t
 				std::string_view leafNameView = leafName;
-				bool isStringT =
+				isStringT =
 					leafNameView.starts_with("m_str") ||
 					leafNameView.starts_with("m_isz") ||
 					leafNameView == "m_sMaster" ||
@@ -1436,26 +1438,29 @@ void DisplayFields(const TypeTable& typeTable, const PDB::CodeView::TPI::Record*
 			jField["amxxType"] = amxxType;
 			jField["unsigned"] = nullptr;
 
-			switch (static_cast<PDB::CodeView::TPI::TypeIndexKind>(ResolveTypes(typeTable, fieldRecord->data.LF_MEMBER.index, true, true, true)))
+			if (!isStringT && amxxType != "stringptr" && amxxType != "string")
 			{
-			case PDB::CodeView::TPI::TypeIndexKind::T_CHAR:
-			case PDB::CodeView::TPI::TypeIndexKind::T_RCHAR:
-			case PDB::CodeView::TPI::TypeIndexKind::T_SHORT:
-			case PDB::CodeView::TPI::TypeIndexKind::T_LONG:
-			case PDB::CodeView::TPI::TypeIndexKind::T_QUAD:
-			case PDB::CodeView::TPI::TypeIndexKind::T_INT4:
-			case PDB::CodeView::TPI::TypeIndexKind::T_INT8:
-				jField["unsigned"] = false;
-				break;
+				switch (static_cast<PDB::CodeView::TPI::TypeIndexKind>(ResolveTypes(typeTable, fieldRecord->data.LF_MEMBER.index, true, true, true)))
+				{
+				case PDB::CodeView::TPI::TypeIndexKind::T_CHAR:
+				case PDB::CodeView::TPI::TypeIndexKind::T_RCHAR:
+				case PDB::CodeView::TPI::TypeIndexKind::T_SHORT:
+				case PDB::CodeView::TPI::TypeIndexKind::T_LONG:
+				case PDB::CodeView::TPI::TypeIndexKind::T_QUAD:
+				case PDB::CodeView::TPI::TypeIndexKind::T_INT4:
+				case PDB::CodeView::TPI::TypeIndexKind::T_INT8:
+					jField["unsigned"] = false;
+					break;
 
-			case PDB::CodeView::TPI::TypeIndexKind::T_UCHAR:
-			case PDB::CodeView::TPI::TypeIndexKind::T_USHORT:
-			case PDB::CodeView::TPI::TypeIndexKind::T_ULONG:
-			case PDB::CodeView::TPI::TypeIndexKind::T_UQUAD:
-			case PDB::CodeView::TPI::TypeIndexKind::T_UINT4:
-			case PDB::CodeView::TPI::TypeIndexKind::T_UINT8:
-				jField["unsigned"] = true;
-				break;
+				case PDB::CodeView::TPI::TypeIndexKind::T_UCHAR:
+				case PDB::CodeView::TPI::TypeIndexKind::T_USHORT:
+				case PDB::CodeView::TPI::TypeIndexKind::T_ULONG:
+				case PDB::CodeView::TPI::TypeIndexKind::T_UQUAD:
+				case PDB::CodeView::TPI::TypeIndexKind::T_UINT4:
+				case PDB::CodeView::TPI::TypeIndexKind::T_UINT8:
+					jField["unsigned"] = true;
+					break;
+				}
 			}
 
 			jFields.push_back(std::move(jField));
