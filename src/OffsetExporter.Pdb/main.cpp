@@ -1378,6 +1378,7 @@ void DisplayFields(const TypeTable& typeTable, const PDB::CodeView::TPI::Record*
 	auto maximumSize = record->header.size - sizeof(uint16_t);
 
 	boost::json::array jFields;
+	boost::json::array jVTable;
 
 	for (size_t i = 0; i < maximumSize;)
 	{
@@ -1476,13 +1477,55 @@ void DisplayFields(const TypeTable& typeTable, const PDB::CodeView::TPI::Record*
 		}
 		else if (fieldRecord->kind == PDB::CodeView::TPI::TypeRecordKind::LF_METHOD)
 		{
-			// Skip
+			// Add to vtable
 			leafName = fieldRecord->data.LF_METHOD.name;
+
+			auto methodList = typeTable.GetTypeRecord(fieldRecord->data.LF_METHOD.mList);
+			if (methodList)
+			{
+				// https://github.com/microsoft/microsoft-pdb/blob/master/PDB/include/symtypeutils.h#L220
+				size_t offsetInMethodList = 0;
+				for (size_t j = 0; j < fieldRecord->data.LF_METHOD.count; j++)
+				{
+					size_t entrySize = 2 * sizeof(uint32_t);
+					PDB::CodeView::TPI::MethodListEntry* entry = (PDB::CodeView::TPI::MethodListEntry*)(methodList->data.LF_METHODLIST.mList + offsetInMethodList);
+
+					PDB::CodeView::TPI::MethodProperty methodProp = (PDB::CodeView::TPI::MethodProperty)entry->attributes.mprop;
+
+					if (methodProp == PDB::CodeView::TPI::MethodProperty::Intro ||
+						methodProp == PDB::CodeView::TPI::MethodProperty::PureIntro)
+					{
+						// printf("METHOD %s %u %u\n", leafName, (uint32_t)methodAttributes, fieldRecord->data.LF_ONEMETHOD.vbaseoff[0] / 4);
+						boost::json::object jMethod;
+						jMethod["name"] = leafName;
+						jMethod["linkName"] = nullptr;
+						jMethod["index"] = entry->vbaseoff[0] / 4;
+						jVTable.push_back(std::move(jMethod));
+					}
+
+					if (methodProp == PDB::CodeView::TPI::MethodProperty::Intro || methodProp == PDB::CodeView::TPI::MethodProperty::PureIntro)
+						entrySize += sizeof(uint32_t);
+					offsetInMethodList += entrySize;
+				}
+			}
 		}
 		else if (fieldRecord->kind == PDB::CodeView::TPI::TypeRecordKind::LF_ONEMETHOD)
 		{
-			// Skip
+			// Add to vtable
 			leafName = GetMethodName(fieldRecord);
+
+			auto methodAttributes = static_cast<PDB::CodeView::TPI::MethodProperty>(fieldRecord->data.LF_ONEMETHOD.attributes.mprop);
+
+			if (methodAttributes == PDB::CodeView::TPI::MethodProperty::Intro ||
+				methodAttributes == PDB::CodeView::TPI::MethodProperty::PureIntro)
+			{
+				// printf("METHOD %s %u %u\n", leafName, (uint32_t)methodAttributes, fieldRecord->data.LF_ONEMETHOD.vbaseoff[0] / 4);
+				boost::json::object jMethod;
+				jMethod["name"] = leafName;
+				jMethod["linkName"] = nullptr;
+				jMethod["index"] = fieldRecord->data.LF_ONEMETHOD.vbaseoff[0] / 4;
+				jVTable.push_back(std::move(jMethod));
+			}
 		}
 		else if (fieldRecord->kind == PDB::CodeView::TPI::TypeRecordKind::LF_BCLASS)
 		{
@@ -1538,6 +1581,7 @@ void DisplayFields(const TypeTable& typeTable, const PDB::CodeView::TPI::Record*
 	}
 
 	jClass["fields"] = std::move(jFields);
+	jClass["vtable"] = std::move(jVTable);
 }
 
 
