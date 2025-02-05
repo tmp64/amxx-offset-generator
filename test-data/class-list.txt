@@ -122,7 +122,6 @@ CGenericMonster
 CGib
 CGibShooter
 CGlock
-CGlock
 CGlockAmmo
 CGlow
 CGMan
