@@ -13,9 +13,9 @@
             "args": [
                 "--windows=.build/src/OffsetExporter.Pdb/bhl.json",
                 "--linux=.build/src/OffsetExporter.Dwarf/bhl_linux.json",
-                "--out=scripts/gamedata/common.games/custom.test",
-                "--banner=Test Generated File",
-                "--file-prefix=test"
+                "--out=scripts/gamedata/common.games/custom",
+                "--banner=BugfixedHl-Rebased offset file. Generated using amxx-offset-generator.",
+                "--file-prefix=bhl"
             ]
         }
     ]

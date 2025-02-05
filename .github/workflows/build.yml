@@ -23,6 +23,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+      
+    - name: Install Ubuntu packages
+      if: matrix.runs-on == 'ubuntu-24.04'
+      run: |
+        sudo apt update || true
+        sudo apt install -y build-essential ninja-build cmake
 
     - name: Restore artifacts, or setup vcpkg for building artifacts
       uses: lukka/run-vcpkg@v11
