@@ -52,7 +52,7 @@ jobs:
     - name: Upload binaries
       uses: actions/upload-artifact@v4.6.0
       with:
-        name: amxx-offset-generator
+        name: amxx-offset-generator-${{ github.sha }}
         path: |
           _build/**/*.dll
           _build/**/*.exe
