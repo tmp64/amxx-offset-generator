@@ -211,7 +211,10 @@ def combine_files(files: dict[EPlatform, dict[str, ClassInfo]]) -> dict[str, Cla
 
     return result
 
-def create_gamedata(classes: dict[str, ClassInfo], out_dir: Path, banner: str | None):
+def create_gamedata(classes: dict[str, ClassInfo], out_dir: Path, banner: str | None, file_prefix: str | None):
+    if file_prefix is not None:
+        file_prefix = file_prefix + '-'
+
     def write_banner(f):
         if banner is not None:
             f.write('//\n')
@@ -270,7 +273,7 @@ def create_gamedata(classes: dict[str, ClassInfo], out_dir: Path, banner: str | 
 
         # Offset file
         def print_field_offsets():
-            with open(out_dir / f'offsets-{class_name_lower}.txt', 'w') as f:
+            with open(out_dir / f'{file_prefix}offsets-{class_name_lower}.txt', 'w') as f:
                 write_banner(f)
 
                 write_indent(f, 0, '"Games"')
@@ -350,7 +353,7 @@ def create_gamedata(classes: dict[str, ClassInfo], out_dir: Path, banner: str | 
             if len(ci.vtable) == 0:
                 return
 
-            with open(out_dir / f'offsets-virtual-{class_name_lower}.txt', 'w') as f:
+            with open(out_dir / f'{file_prefix}offsets-virtual-{class_name_lower}.txt', 'w') as f:
                 write_banner(f)
 
                 write_indent(f, 0, '"Games"')
@@ -393,7 +396,7 @@ def create_gamedata(classes: dict[str, ClassInfo], out_dir: Path, banner: str | 
         print_vtable_offsets()
 
     # Create common vtable file
-    with open(out_dir / "offsets-virtual-common.txt", 'w') as f:
+    with open(out_dir / f'{file_prefix}offsets-virtual-common.txt', 'w') as f:
         write_banner(f)
 
         write_indent(f, 0, '"Games"')
@@ -437,6 +440,7 @@ def main():
     parser.add_argument('--linux', help='Path to Linux JSON')
     parser.add_argument('--out', help='Path to custom gamedata directory', required=True)
     parser.add_argument('--banner', help='Top comment in generated files')
+    parser.add_argument('--file-prefix', help='File name prefix')
 
     args = parser.parse_args()
 
@@ -454,6 +458,6 @@ def main():
     classes = combine_files(files)
     
     print(f'==== Creating gamedata in {args.out}')
-    create_gamedata(classes, Path(args.out), args.banner)
+    create_gamedata(classes, Path(args.out), args.banner, args.file_prefix)
 
 main()
