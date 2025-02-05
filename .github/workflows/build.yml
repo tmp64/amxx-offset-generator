@@ -13,7 +13,7 @@ jobs:
   build:
     strategy:
       matrix:
-        runsOn: [windows-2019, ubuntu-20.04]
+        runsOn: [windows-2022, ubuntu-24.04]
         buildType: [Debug, Release]
 
     runs-on: ${{ matrix.runsOn }}
