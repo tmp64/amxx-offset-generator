@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         runsOn: [windows-2022, ubuntu-24.04]
-        buildType: [Debug, Release]
+        buildType: [Debug, RelWithDebInfo]
 
     runs-on: ${{ matrix.runsOn }}
     
@@ -52,12 +52,13 @@ jobs:
     - name: Upload binaries
       uses: actions/upload-artifact@v4.6.0
       with:
-        name: amxx-offset-generator-${{ github.sha }}
+        name: amxx-offset-generator-${{ github.sha }}-${{ matrix.runsOn }}-${{matrix.buildType}}
         path: |
-          _build/**/*.dll
-          _build/**/*.exe
-          _build/**/*.so
-          _build/**/*.pdb
-          _build/**/OffsetGenerator.Dwarf
-          _build/**/OffsetGenerator.Pdb
+          _build/ninja-vcpkg/src/OffsetExporter.Dwarf/Release/OffsetExporter.Dwarf
+          _build/ninja-vcpkg/src/OffsetExporter.Dwarf/Release/OffsetExporter.Dwarf.exe
+          _build/ninja-vcpkg/src/OffsetExporter.Pdb/Release/OffsetExporter.Pdb
+          _build/ninja-vcpkg/src/OffsetExporter.Pdb/Release/OffsetExporter.Pdb.exe
+          _build/ninja-vcpkg/**/*.dll
+          _build/ninja-vcpkg/**/*.exe
+          _build/ninja-vcpkg/**/*.pdb
           scripts/create_amxx_files.py
