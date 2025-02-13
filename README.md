@@ -4,7 +4,14 @@ This tool generates offset gamedata files for AMX Mod X from debug information
 (PDB and DWARF).
 
 ## Usage
-1. Retrieve the list of all classes that inherit from `CBaseEntity` and
+1. Prerequisites:
+   1. Get debug symbols for your mod.
+      - On Windows, compile the mod with Visual Studio in Release mode. Set Debug
+        Information Format = Program Database (/Zi)
+      - On Linux, compile the mod with `-g` compiler argument
+      - If using CMake, use RelWithDebInfo configuration
+   2. Download amxx-offset-generator from Releases page on GitHub.
+2. Retrieve the list of all classes that inherit from `CBaseEntity` and
    `CGameRules`.
    
    For Half-Life, you can use the file in this repo: `test-data\class-list.txt`
@@ -29,22 +36,22 @@ This tool generates offset gamedata files for AMX Mod X from debug information
    4. Add `CBaseEntity` and `CGameRules` manually
    5. Remove `CRestore`, `CSave`, `CMultiplayGameMgrHelper` manually
    6. Sort the file
-2. Generate Windows offsets by running:
+3. Run this command to generate Windows offsets:
    ```
    OffsetGenerator.Pdb
      --class-list path-to/class-list.txt
      --pdb path-to/hl.pdb
      --out offsets_windows.json
    ```
-3. Generate Linux offsets by runnin:
+4. Run this command to generate Linux offsets:
    ```
    OffsetGenerator.Dwarf
      --class-list path-to/class-list.txt
      --so path-to/hl.so
      --out offsets_linux.json
    ```
-4. Combine JSONs and generate AMXX gamedata. You can omit `--windows` or `--linux`
-   if you don't need offsets for them.
+5. Run this command to combine JSONs and generate AMXX gamedata. You can omit
+   `--windows` or `--linux` if you don't need offsets for one them.
    ```
    python scripts/create_amxx_files.py
      --windows=path-to/offsets_windows.json

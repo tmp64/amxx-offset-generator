@@ -1,0 +1,61 @@
+name: build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  
+  # Run GitHub Actions monthly to make sure CI isn't broken
+  schedule:
+    - cron: '0 0 1 * *'
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        runsOn: [windows-2022, ubuntu-24.04]
+        buildType: [Debug, RelWithDebInfo]
+
+    runs-on: ${{ matrix.runsOn }}
+    
+    env:
+      VCPKG_ROOT: '${{github.workspace}}/vcpkg'
+
+    steps:
+    - uses: actions/checkout@v3
+      
+    - name: Install Ubuntu packages
+      if: matrix.runsOn == 'ubuntu-24.04'
+      run: |
+        sudo apt update || true
+        sudo apt install -y build-essential ninja-build cmake
+
+    - name: Restore artifacts, or setup vcpkg for building artifacts
+      uses: lukka/run-vcpkg@v11
+      id: runvcpkg
+      with:
+        vcpkgJsonGlob: 'vcpkg.json'
+        vcpkgDirectory: '${{env.VCPKG_ROOT}}'
+        vcpkgGitCommitId: '813a241fb83adad503a391facaa6aa634631accc'
+        runVcpkgInstall: false
+
+    - name: Run CMake+vcpkg+Ninja+CTest to generate/build/test.
+      uses: lukka/run-cmake@v10
+      id: runcmake
+      with:
+        configurePreset: 'ninja-vcpkg'
+        buildPreset: 'ninja-vcpkg'
+        buildPresetAdditionalArgs: "[`--config`, `${{matrix.buildType}}`]"
+      env:
+        VCPKG_FORCE_SYSTEM_BINARIES: 1
+
+    - name: Upload binaries
+      uses: actions/upload-artifact@v4.6.0
+      with:
+        name: amxx-offset-generator-${{ github.sha }}-${{ matrix.runsOn }}-${{matrix.buildType}}
+        path: |
+          _build/ninja-vcpkg/src/OffsetExporter.Dwarf/${{matrix.buildType}}/**/*
+          _build/ninja-vcpkg/src/OffsetExporter.Pdb/${{matrix.buildType}}/**/*
+          _build/ninja-vcpkg/src/OffsetExporter.Dwarf/OffsetExporter.Dwarf
+          _build/ninja-vcpkg/src/OffsetExporter.Pdb/OffsetExporter.Pdb
+          scripts/create_amxx_files.py
