@@ -54,11 +54,8 @@ jobs:
       with:
         name: amxx-offset-generator-${{ github.sha }}-${{ matrix.runsOn }}-${{matrix.buildType}}
         path: |
-          _build/ninja-vcpkg/src/OffsetExporter.Dwarf/Release/OffsetExporter.Dwarf
-          _build/ninja-vcpkg/src/OffsetExporter.Dwarf/Release/OffsetExporter.Dwarf.exe
-          _build/ninja-vcpkg/src/OffsetExporter.Pdb/Release/OffsetExporter.Pdb
-          _build/ninja-vcpkg/src/OffsetExporter.Pdb/Release/OffsetExporter.Pdb.exe
-          _build/ninja-vcpkg/**/*.dll
-          _build/ninja-vcpkg/**/*.exe
-          _build/ninja-vcpkg/**/*.pdb
+          _build/ninja-vcpkg/src/OffsetExporter.Dwarf/${{matrix.buildType}}/**/*
+          _build/ninja-vcpkg/src/OffsetExporter.Pdb/${{matrix.buildType}}/**/*
+          _build/ninja-vcpkg/src/OffsetExporter.Dwarf/OffsetExporter.Dwarf
+          _build/ninja-vcpkg/src/OffsetExporter.Pdb/OffsetExporter.Pdb
           scripts/create_amxx_files.py
