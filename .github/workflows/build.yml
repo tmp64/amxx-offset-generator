@@ -13,7 +13,7 @@ jobs:
   build:
     strategy:
       matrix:
-        runsOn: [windows-2022, ubuntu-24.04]
+        runsOn: [windows-2022, ubuntu-22.04]
         buildType: [Debug, RelWithDebInfo]
 
     runs-on: ${{ matrix.runsOn }}
@@ -25,7 +25,7 @@ jobs:
     - uses: actions/checkout@v3
       
     - name: Install Ubuntu packages
-      if: matrix.runsOn == 'ubuntu-24.04'
+      if: matrix.runsOn == 'ubuntu-22.04'
       run: |
         sudo apt update || true
         sudo apt install -y build-essential ninja-build cmake
